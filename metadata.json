@@ -1,0 +1,6 @@
+{
+  "name": "Android USB Mirror & PC Control",
+  "description": "Aplikasi mirroring layar HP Android ke PC Windows via kabel USB dengan audio latensi rendah dan kontrol penuh menggunakan mouse dan keyboard.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
