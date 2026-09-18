@@ -6,6 +6,8 @@ import {
   KeyMappingItem 
 } from './types';
 import { adbBridge } from './utils/webUsbAdb';
+import { detectWindowsGpu, DetectedGpuInfo } from './utils/gpuDetector';
+import { usePWAInstall } from './hooks/usePWAInstall';
 import { UsbConnectionHeader } from './components/UsbConnectionHeader';
 import { PhoneViewport } from './components/PhoneViewport';
 import { AudioPanel } from './components/AudioPanel';
@@ -15,6 +17,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { WindowsPackageModal } from './components/WindowsPackageModal';
 import { SetupGuideModal } from './components/SetupGuideModal';
 import { KeymappingModal } from './components/KeymappingModal';
+import { GpuSettingsModal } from './components/GpuSettingsModal';
+import { LocalInstallerModal } from './components/LocalInstallerModal';
 import { 
   MousePointer, 
   ArrowRight, 
@@ -24,10 +28,18 @@ import {
   Info, 
   Download, 
   CheckCircle2, 
-  HelpCircle 
+  HelpCircle,
+  Zap,
+  HardDrive
 } from 'lucide-react';
 
 export default function App() {
+  // Detected GPU Information
+  const [gpuInfo, setGpuInfo] = useState<DetectedGpuInfo>(() => detectWindowsGpu());
+
+  // PWA Desktop Application Installation Hook
+  const { isInstallable: isPwaInstallable, install: installPwa } = usePWAInstall();
+
   // Device State
   const [device, setDevice] = useState<DeviceInfo>({
     id: 'USB-SN948271',
@@ -46,7 +58,7 @@ export default function App() {
     screenOffMode: false,
   });
 
-  // Mirroring & Audio Configuration
+  // Mirroring & Audio Configuration with GPU Renderer
   const [config, setConfig] = useState<MirrorConfig>({
     resolutionPreset: 'native',
     customWidth: 1080,
@@ -54,6 +66,11 @@ export default function App() {
     maxFps: 60,
     videoBitrate: 16,
     videoCodec: 'h264',
+    // GPU Hardware Acceleration
+    gpuRenderer: 'direct3d11',
+    gpuProfile: 'high_performance',
+    gpuHardwareAcceleration: true,
+    gpuDeviceName: gpuInfo.renderer,
     audioCodec: 'raw',
     audioBufferMs: 10,
     audioEnabled: true,
@@ -68,7 +85,7 @@ export default function App() {
     showTouches: true,
   });
 
-  // Performance & Latency Metrics
+  // Performance & Latency Metrics including GPU Telemetry
   const [stats, setStats] = useState<LatencyStats>({
     fps: 59.8,
     renderLatencyMs: 12,
@@ -76,12 +93,16 @@ export default function App() {
     usbBandwidthMbps: 14.6,
     droppedFrames: 0,
     packetLoss: 0,
+    gpuDecodeLatencyMs: 0.8,
+    gpuVramMb: 94,
+    gpuLoadPercent: 18,
   });
 
   // ADB Transmission Logs
   const [adbLogs, setAdbLogs] = useState<string[]>([
     '[ADB INIT] USB 3.0 SuperSpeed link established (5.0 Gbps)',
     '[ADB OK] Device authorized: Samsung Galaxy S24 Ultra (Android 14)',
+    '[GPU INIT] Direct3D 11 hardware video decoder active (Zero CPU copy)',
     '[AUDIO] UAC2 Audio playback capture active (48kHz, 16-bit PCM, buffer=10ms)',
     '[INPUT] UHID mouse & keyboard passthrough initialized',
   ]);
@@ -102,6 +123,8 @@ export default function App() {
   const [isWindowsPackageOpen, setIsWindowsPackageOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isKeymappingOpen, setIsKeymappingOpen] = useState(false);
+  const [isGpuModalOpen, setIsGpuModalOpen] = useState(false);
+  const [isLocalInstallerOpen, setIsLocalInstallerOpen] = useState(false);
 
   // Recording State
   const [isRecording, setIsRecording] = useState(false);
@@ -209,12 +232,20 @@ export default function App() {
         device={device}
         onDeviceConnected={(updated) => setDevice((prev) => ({ ...prev, ...updated }))}
         logs={adbLogs}
+        config={config}
+        onOpenGpuModal={() => setIsGpuModalOpen(true)}
+        onOpenLocalInstaller={() => setIsLocalInstallerOpen(true)}
       />
 
       {/* Main Workspace Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col space-y-4">
-        {/* Performance & Latency Diagnostics HUD */}
-        <DiagnosticsBar stats={stats} device={device} />
+        {/* Performance & Latency Diagnostics HUD with GPU Render Indicator */}
+        <DiagnosticsBar 
+          stats={stats} 
+          device={device} 
+          config={config}
+          onOpenGpuModal={() => setIsGpuModalOpen(true)}
+        />
 
         {/* Core Layout: Left Screen / Right Controls */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
@@ -225,9 +256,18 @@ export default function App() {
                 <MousePointer className="w-3.5 h-3.5 text-cyan-400" />
                 <span>Layar Interaktif (Kendali Mouse Aktif)</span>
               </span>
-              <span className="font-mono text-cyan-300 font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40 text-[11px]">
-                Latensi: ~{stats.renderLatencyMs}ms
-              </span>
+              <div className="flex items-center space-x-1.5">
+                <button
+                  onClick={() => setIsGpuModalOpen(true)}
+                  className="font-mono text-cyan-300 font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-700/50 text-[10px] hover:bg-cyan-900/80 transition uppercase"
+                  title="Render Akselerasi GPU Aktif"
+                >
+                  ⚡ GPU: {config.gpuRenderer.toUpperCase()}
+                </button>
+                <span className="font-mono text-emerald-300 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40 text-[10px]">
+                  ~{stats.renderLatencyMs}ms
+                </span>
+              </div>
             </div>
 
             {/* Interactive Phone Screen with Mouse Tap, Drag, Swipe, Scroll, Right-click back */}
@@ -264,6 +304,8 @@ export default function App() {
               onOpenGuide={() => setIsGuideOpen(true)}
               onOpenWindowsPackage={() => setIsWindowsPackageOpen(true)}
               onOpenKeymapping={() => setIsKeymappingOpen(true)}
+              onOpenGpuModal={() => setIsGpuModalOpen(true)}
+              onOpenLocalInstaller={() => setIsLocalInstallerOpen(true)}
               onTakeScreenshot={handleTakeScreenshot}
               isRecording={isRecording}
               recordingDurationSec={recordSeconds}
@@ -350,18 +392,41 @@ export default function App() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-300">
-                  Dapatkan script peluncur sekali klik (.bat / .ps1) dengan konfigurasi latensi terendah, forwarding audio PCM, dan mouse UHID.
+                  Jalankan langsung di PC Windows dengan GPU Dedicated (Direct3D 11 / NVDEC / Vulkan), forwarding audio PCM, dan installer otomatis.
                 </p>
               </div>
 
-              <button
-                id="btn-open-win-pkg-banner"
-                onClick={() => setIsWindowsPackageOpen(true)}
-                className="shrink-0 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-cyan-950/60 flex items-center space-x-1.5 transition-all active:scale-95"
-              >
-                <Download className="w-4 h-4" />
-                <span>Unduh Script Windows</span>
-              </button>
+              <div className="flex items-center space-x-2 shrink-0 flex-wrap">
+                {isPwaInstallable && (
+                  <button
+                    id="btn-install-pwa-app"
+                    onClick={installPwa}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-950 flex items-center space-x-1.5 transition-all active:scale-95"
+                    title="Pasang aplikasi web ini langsung ke desktop Windows"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>Pasang Aplikasi Windows</span>
+                  </button>
+                )}
+
+                <button
+                  id="btn-open-local-installer"
+                  onClick={() => setIsLocalInstallerOpen(true)}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs rounded-xl border border-cyan-500/40 flex items-center space-x-1.5 transition-all active:scale-95"
+                >
+                  <HardDrive className="w-4 h-4 text-cyan-400" />
+                  <span>Installer Lokal Windows</span>
+                </button>
+
+                <button
+                  id="btn-open-win-pkg-banner"
+                  onClick={() => setIsWindowsPackageOpen(true)}
+                  className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-cyan-950/60 flex items-center space-x-1.5 transition-all active:scale-95"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Script</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -373,6 +438,24 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         config={config}
         onChangeConfig={handleChangeConfig}
+      />
+
+      <GpuSettingsModal
+        isOpen={isGpuModalOpen}
+        onClose={() => setIsGpuModalOpen(false)}
+        config={config}
+        onChangeConfig={handleChangeConfig}
+        gpuInfo={gpuInfo}
+        stats={stats}
+      />
+
+      <LocalInstallerModal
+        isOpen={isLocalInstallerOpen}
+        onClose={() => setIsLocalInstallerOpen(false)}
+        config={config}
+        device={device}
+        onInstallPwa={isPwaInstallable ? () => { void installPwa(); } : undefined}
+        isPwaInstallable={isPwaInstallable}
       />
 
       <WindowsPackageModal

@@ -26,6 +26,11 @@ export interface MirrorConfig {
   maxFps: 30 | 60 | 90 | 120;
   videoBitrate: number; // Mbps
   videoCodec: 'h264' | 'h265' | 'av1';
+  // GPU Hardware Acceleration
+  gpuRenderer: 'direct3d11' | 'nvdec' | 'vulkan' | 'opengl' | 'software';
+  gpuProfile: 'high_performance' | 'balanced' | 'power_save';
+  gpuHardwareAcceleration: boolean;
+  gpuDeviceName?: string;
   audioCodec: 'raw' | 'opus' | 'aac';
   audioBufferMs: number; // 5 - 50 ms
   audioEnabled: boolean;
@@ -47,6 +52,9 @@ export interface LatencyStats {
   usbBandwidthMbps: number;
   droppedFrames: number;
   packetLoss: number;
+  gpuDecodeLatencyMs: number;
+  gpuVramMb: number;
+  gpuLoadPercent: number;
 }
 
 export interface TouchRipple {

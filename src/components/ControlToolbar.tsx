@@ -15,7 +15,9 @@ import {
   HelpCircle, 
   Gamepad2, 
   ClipboardCopy, 
-  Check 
+  Check,
+  Zap,
+  HardDrive
 } from 'lucide-react';
 import { MirrorConfig } from '../types';
 import { adbBridge } from '../utils/webUsbAdb';
@@ -27,6 +29,8 @@ interface ControlToolbarProps {
   onOpenGuide: () => void;
   onOpenWindowsPackage: () => void;
   onOpenKeymapping: () => void;
+  onOpenGpuModal: () => void;
+  onOpenLocalInstaller: () => void;
   onTakeScreenshot: () => void;
   isRecording: boolean;
   recordingDurationSec: number;
@@ -42,6 +46,8 @@ export const ControlToolbar: React.FC<ControlToolbarProps> = ({
   onOpenGuide,
   onOpenWindowsPackage,
   onOpenKeymapping,
+  onOpenGpuModal,
+  onOpenLocalInstaller,
   onTakeScreenshot,
   isRecording,
   recordingDurationSec,
@@ -217,6 +223,28 @@ export const ControlToolbar: React.FC<ControlToolbarProps> = ({
 
       {/* Group 3: Setup & Settings */}
       <div className="flex items-center space-x-1.5">
+        {/* GPU Video Acceleration Trigger */}
+        <button
+          id="btn-toolbar-gpu"
+          onClick={onOpenGpuModal}
+          title="Pengaturan GPU Hardware Render (Direct3D 11, NVDEC, Vulkan)"
+          className="px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 text-xs font-semibold flex items-center space-x-1.5 active:scale-95 transition-all"
+        >
+          <Zap className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="hidden sm:inline font-mono">GPU: {config.gpuRenderer.toUpperCase()}</span>
+        </button>
+
+        {/* Local Windows Native Installer Trigger */}
+        <button
+          id="btn-toolbar-local-install"
+          onClick={onOpenLocalInstaller}
+          title="Build & Instalasi Mandiri di Windows Lokal"
+          className="px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center space-x-1.5 active:scale-95 transition-all"
+        >
+          <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden md:inline">Instal Lokal</span>
+        </button>
+
         <button
           id="btn-toolbar-guide"
           onClick={onOpenGuide}

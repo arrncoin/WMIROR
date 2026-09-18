@@ -2,27 +2,32 @@ import React, { useState } from 'react';
 import { 
   Usb, 
   Smartphone, 
-  CheckCircle2, 
-  RefreshCw, 
-  AlertCircle, 
-  ShieldCheck, 
   ChevronDown, 
   ChevronUp, 
-  Terminal 
+  Terminal,
+  Zap,
+  HardDrive,
+  Download
 } from 'lucide-react';
-import { DeviceInfo } from '../types';
+import { DeviceInfo, MirrorConfig } from '../types';
 import { requestAndroidUsbDevice } from '../utils/webUsbAdb';
 
 interface UsbConnectionHeaderProps {
   device: DeviceInfo;
   onDeviceConnected: (device: Partial<DeviceInfo>) => void;
   logs: string[];
+  config: MirrorConfig;
+  onOpenGpuModal: () => void;
+  onOpenLocalInstaller: () => void;
 }
 
 export const UsbConnectionHeader: React.FC<UsbConnectionHeaderProps> = ({
   device,
   onDeviceConnected,
   logs,
+  config,
+  onOpenGpuModal,
+  onOpenLocalInstaller,
 }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [showLogDrawer, setShowLogDrawer] = useState(false);
@@ -52,23 +57,35 @@ export const UsbConnectionHeader: React.FC<UsbConnectionHeaderProps> = ({
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Brand & App Title */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-950/60 ring-2 ring-cyan-400/20">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-950/60 ring-2 ring-cyan-400/20 shrink-0">
             <Smartphone className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-base font-extrabold text-white tracking-tight">
-                Android USB Mirror <span className="text-cyan-400 font-mono text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800/50">v2.4 Windows</span>
+                Android USB Mirror <span className="text-cyan-400 font-mono text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800/50">v2.5 Windows</span>
               </h1>
             </div>
             <p className="text-xs text-slate-400">
-              Mirroring Layar HP ke PC • Audio Internal Latensi Rendah • Kontrol Penuh Mouse & Keyboard
+              Akselerasi Grafis GPU • Audio Internal USB Latensi Rendah • Kontrol Mouse PC
             </p>
           </div>
         </div>
 
-        {/* Device Status & Connect Button */}
-        <div className="flex items-center space-x-2.5 flex-wrap">
+        {/* Action Controls & Device Status */}
+        <div className="flex items-center space-x-2 flex-wrap">
+          {/* GPU Hardware Status Pill */}
+          <button
+            onClick={onOpenGpuModal}
+            title="Klik untuk mengubah konfigurasi render GPU (Direct3D 11, NVDEC, Vulkan)"
+            className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-cyan-500/40 hover:border-cyan-400 text-xs text-cyan-300 transition group"
+          >
+            <Zap className="w-3.5 h-3.5 text-cyan-400 group-hover:animate-pulse" />
+            <span className="font-mono text-[11px] font-semibold uppercase">
+              GPU: {config.gpuRenderer.toUpperCase()}
+            </span>
+          </button>
+
           {/* Status Capsule */}
           <div className="flex items-center space-x-2 bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-xl text-xs">
             <div className="relative flex items-center justify-center">
@@ -80,7 +97,7 @@ export const UsbConnectionHeader: React.FC<UsbConnectionHeaderProps> = ({
               <span className="text-[10px] text-slate-400 leading-none">
                 {device.connectionStatus === 'connected' ? 'Terhubung via USB' : 'Mode Simulasi / Siap'}
               </span>
-              <span className="font-bold text-slate-200 leading-tight truncate max-w-[140px]">
+              <span className="font-bold text-slate-200 leading-tight truncate max-w-[130px]">
                 {device.brand} {device.model}
               </span>
             </div>
@@ -95,10 +112,21 @@ export const UsbConnectionHeader: React.FC<UsbConnectionHeaderProps> = ({
             id="btn-connect-webusb"
             onClick={handleConnectUsb}
             disabled={isConnecting}
-            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:brightness-110 text-white font-semibold text-xs shadow-lg shadow-cyan-950 active:scale-95 transition-all disabled:opacity-50"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:brightness-110 text-white font-semibold text-xs shadow-lg shadow-cyan-950 active:scale-95 transition-all disabled:opacity-50"
           >
-            <Usb className={`w-4 h-4 ${isConnecting ? 'animate-spin' : ''}`} />
-            <span>{isConnecting ? 'Mendeteksi...' : 'Deteksi Kabel USB HP'}</span>
+            <Usb className={`w-3.5 h-3.5 ${isConnecting ? 'animate-spin' : ''}`} />
+            <span>{isConnecting ? 'Mendeteksi...' : 'Deteksi Kabel USB'}</span>
+          </button>
+
+          {/* Windows Local Installer Button */}
+          <button
+            id="btn-header-install-local"
+            onClick={onOpenLocalInstaller}
+            title="Download Installer Mandiri untuk Windows Lokal"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 active:scale-95 transition"
+          >
+            <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Instal di Windows</span>
           </button>
 
           {/* Activity Log Drawer Toggle */}
@@ -108,7 +136,7 @@ export const UsbConnectionHeader: React.FC<UsbConnectionHeaderProps> = ({
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs flex items-center space-x-1 transition-colors"
             title="Log ADB & WebUSB"
           >
-            <Terminal className="w-4 h-4 text-cyan-400" />
+            <Terminal className="w-3.5 h-3.5 text-cyan-400" />
             {showLogDrawer ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         </div>
