@@ -3,6 +3,9 @@ title Android Mirror (GPU Direct3D 11 - Low Latency)
 color 0b
 cls
 
+:: Pindah ke direktori skrip ini berada
+cd /d "%~dp0"
+
 echo ====================================================================
 echo   MEMULAI MIRRORING LAYAR ANDROID DENGAN GPU AKSELERASI & AUDIO
 echo ====================================================================
@@ -24,12 +27,14 @@ scrcpy.exe --render-driver=direct3d11 --video-decoder=auto --max-fps=60 -b 16M -
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo ====================================================================
-    echo [!] PERINGATAN: Perangkat belum terdeteksi.
+    echo [!] PERINGATAN: Perangkat belum terdeteksi atau scrcpy.exe belum ada.
     echo.
     echo Pastikan:
     echo  1. Kabel USB HP sudah terhubung ke port PC Windows.
     echo  2. Opsi Pengembang (Developer Options) & USB Debugging aktif di HP.
-    echo  3. Klik 'Selalu izinkan dari komputer ini' pada popup di layar HP.
+    echo  3. Klik 'Selalu izinkan dari komputer ini' pada notifikasi di layar HP.
     echo ====================================================================
-    pause
+    echo.
+    echo Tekan tombol apa saja untuk menutup...
+    pause >nul
 )
