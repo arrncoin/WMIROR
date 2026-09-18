@@ -1,0 +1,6 @@
+Windows Registry Editor Version 5.00
+
+; Mengonfigurasi Windows 10 & 11 agar selalu menggunakan GPU High Performance (Dedicated GPU: NVIDIA GeForce / AMD Radeon / Intel Arc) untuk scrcpy
+[HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences]
+"C:\\AndroidMirrorPC\\scrcpy.exe"="GpuPreference=2;"
+"scrcpy.exe"="GpuPreference=2;"
